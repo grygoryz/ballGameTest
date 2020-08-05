@@ -69,10 +69,11 @@ const getObstacle = () => {
     const x = canvas.width;
     const y = canvas.height - groundHeight - height;
     const color = "black"
+    const passed = false;
 
     return {
         width, height,
-        x, y,
+        x, y, passed,
         draw() {
             ctx.fillStyle = color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -102,40 +103,50 @@ const drawObstacles = () => {
             ++startIndex;
         }
     }
-
 }
 
 // game
 let frame;
 let isPlaying = false;
+let score = 0;
 
 const drawGame = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height - groundHeight);
 
+    ctx.font = "25px serif";
+    ctx.fillText(`${score}`, 20, 30);
+
     drawObstacles();
     ball.draw()
 
-    if (isCollisionHappened(ball, obstacles)) {
-        cancelAnimationFrame(frame);
-        isPlaying = false;
-        gameOverCallback("fail");
-        return;
+    for (let i = startIndex; i < obstacles.length; i++) {
+        const obstacle = obstacles[i];
+
+        if (obstacle.passed) continue;
+
+        if (isObstaclePassed(ball, obstacle)) {
+            score++;
+            obstacle.passed = true;
+            continue
+        }
+
+        if (isCollisionHappened(ball, obstacle)) {
+            cancelAnimationFrame(frame);
+            isPlaying = false;
+            gameOverCallback("fail");
+            return;
+        }
     }
 
     frame = requestAnimationFrame(drawGame);
 }
 
-const isCollisionHappened = (ball, obstacles) => {
-    for (let i = startIndex; i < obstacles.length; i++) {
-        const obstacle = obstacles[i];
-        if (obstacle.x + obstacle.width < (ball.x - ball.radius)) return;
+const isObstaclePassed = (ball, obstacle) => {
+    return obstacle.x + obstacle.width < (ball.x - ball.radius);
+}
 
-        if (obstacle.x <= (ball.x + ball.radius) && obstacle.y <= (ball.y + ball.radius)) {
-            return true;
-        }
-    }
-
-    return false;
+const isCollisionHappened = (ball, obstacle) => {
+    return obstacle.x <= (ball.x + ball.radius) && obstacle.y <= (ball.y + ball.radius)
 }
 
 document.addEventListener("keydown", onKeyDown);
