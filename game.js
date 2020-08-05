@@ -60,85 +60,115 @@ const ball = {
 }
 
 // obstacles
-let obstacles = [];
-const veloX = 6;
+const obstacles = {
+    list: [],
+    color: "black",
+    veloX: 6,
+    timeout: null,
+    minTimeout: 1000,
+    maxTimeout: 2000,
+    startIndex: 0,
+    dirty: false,
 
-const getObstacle = () => {
-    const width = Math.floor(10 + Math.random() * 70);
-    const height = Math.floor(20 + Math.random() * 60);
-    const x = canvas.width;
-    const y = canvas.height - groundHeight - height;
-    const color = "black"
-    const passed = false;
+    draw() {
+        if (!this.timeout) {
+            this.timeout = Math.floor(this.minTimeout + Math.random() * (this.maxTimeout - this.minTimeout));
+            setTimeout(() => {
+                this.list.push(this._getObstacle())
+                this.timeout = null;
+                if (!this.dirty) this.dirty = true;
+            }, this.timeout)
+        }
 
-    return {
-        width, height,
-        x, y, passed,
-        draw() {
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+        for (let i = this.startIndex; i < this.list.length; i++) {
+            const obstacle = this.list[i];
+            if (obstacle.x - this.veloX + obstacle.width > 0) {
+                obstacle.x -= this.veloX;
+                obstacle.draw();
+            } else {
+                ++this.startIndex;
+            }
+        }
+    },
+
+    clear() {
+        this.list = [];
+        this.timeout = null;
+        this.startIndex = 0;
+        this.dirty = false;
+    },
+
+    _getObstacle() {
+        const width = Math.floor(10 + Math.random() * 70);
+        const height = Math.floor(20 + Math.random() * 60);
+        const x = canvas.width;
+        const y = canvas.height - groundHeight - height;
+        const passed = false;
+
+        return {
+            width, height,
+            x, y, passed,
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
         }
     }
 }
 
-let timeout;
-let startIndex = 0;
-
-const drawObstacles = () => {
-
-    if (!timeout) {
-        timeout = Math.floor(1000 + Math.random() * 1500);
-        setTimeout(() => {
-            obstacles.push(getObstacle())
-            timeout = null;
-        }, timeout)
-    }
-
-    for (let i = startIndex; i < obstacles.length; i++) {
-        const obstacle = obstacles[i];
-        if (obstacle.x - veloX + obstacle.width > 0) {
-            obstacle.x -= veloX;
-            obstacle.draw();
-        } else {
-            ++startIndex;
-        }
+// score
+const score = {
+    value: 0,
+    font: "25px serif",
+    x: 20,
+    y: 35,
+    draw() {
+        ctx.font = "25px serif";
+        ctx.fillText(`${this.value}`, this.x, this.y);
+    },
+    increment() {
+        this.value++;
+    },
+    clear() {
+        this.value = 0;
     }
 }
 
 // game
 let frame;
 let isPlaying = false;
-let score = 0;
 
-const drawGame = () => {
+const drawGame = (winScore, handleResult) => {
+
     ctx.clearRect(0, 0, canvas.width, canvas.height - groundHeight);
 
-    ctx.font = "25px serif";
-    ctx.fillText(`${score}`, 20, 30);
-
-    drawObstacles();
+    obstacles.draw();
     ball.draw()
+    score.draw()
 
-    for (let i = startIndex; i < obstacles.length; i++) {
-        const obstacle = obstacles[i];
+    if (score.value === winScore) {
+        stopGame(() => handleResult("success"));
+        return;
+    }
+
+    for (let i = obstacles.startIndex; i < obstacles.list.length; i++) {
+        const obstacle = obstacles.list[i];
 
         if (obstacle.passed) continue;
 
         if (isObstaclePassed(ball, obstacle)) {
-            score++;
+            score.increment();
             obstacle.passed = true;
             continue
         }
 
         if (isCollisionHappened(ball, obstacle)) {
-            cancelAnimationFrame(frame);
-            isPlaying = false;
-            gameOverCallback("fail");
+            stopGame(() => handleResult("fail", score.value))
             return;
         }
     }
 
-    frame = requestAnimationFrame(drawGame);
+    frame = requestAnimationFrame(() => drawGame(winScore, handleResult));
 }
 
 const isObstaclePassed = (ball, obstacle) => {
@@ -149,31 +179,26 @@ const isCollisionHappened = (ball, obstacle) => {
     return obstacle.x <= (ball.x + ball.radius) && obstacle.y <= (ball.y + ball.radius)
 }
 
+const stopGame = (callback) => {
+    cancelAnimationFrame(frame);
+    isPlaying = false;
+    callback();
+}
+
 document.addEventListener("keydown", onKeyDown);
 
 function onKeyDown(e) {
     if (e.code === "ArrowUp" || e.code === "KeyW") ball.jump();
 }
 
-const startGame = () => {
+const startGame = (winScore, handleResult) => {
+    obstacles.dirty && obstacles.clear();
+    score.value && score.clear();
+
     isPlaying = true;
     drawGround();
-    drawGame();
+    drawGame(winScore, handleResult);
 }
-
-const restartGame = () => {
-    // obstacles refresh
-    obstacles = [];
-    startIndex = 0;
-    startGame()
-}
-
-let gameOverCallback;
-
-const subscribeForResult = (f) => {
-    gameOverCallback = f;
-}
-
 
 
 
