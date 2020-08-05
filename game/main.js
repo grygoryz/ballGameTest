@@ -27,15 +27,16 @@ const stopGame = (callback) => {
 const drawGame = (winScore, handleResult) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height - ground.height);
 
-    !ground.isDrawn && ground.draw();
-    obstacles.draw();
-    ball.draw()
     score.draw()
 
     if (score.value === winScore) {
         stopGame(() => handleResult("success"));
         return;
     }
+
+    !ground.isDrawn && ground.draw();
+    obstacles.draw();
+    ball.draw()
 
     for (let i = obstacles.startIndex; i < obstacles.list.length; i++) {
         const obstacle = obstacles.list[i];

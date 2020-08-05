@@ -1,10 +1,14 @@
 const obstacles = {
     list: [],
     color: "black",
-    veloX: 6,
+    veloX: 8,
     timeout: null,
-    minTimeout: 1000,
-    maxTimeout: 2000,
+    minTimeout: 900,
+    maxTimeout: 1500,
+    minHeight: 40,
+    maxHeight: 140,
+    minWidth: 50,
+    maxWidth: 80,
     startIndex: 0,
     dirty: false,
 
@@ -37,15 +41,15 @@ const obstacles = {
     },
 
     _getObstacle() {
-        const width = Math.floor(10 + Math.random() * 70);
-        const height = Math.floor(20 + Math.random() * 60);
+        const width = Math.floor(this.minWidth + Math.random() * (this.maxWidth - this.minWidth));
+        const height = Math.floor(this.minHeight + Math.random() * (this.maxHeight - this.minHeight));
         const x = canvas.width;
         const y = canvas.height - ground.height - height;
-        const passed = false;
 
         return {
-            width, height,
-            x, y, passed,
+            width, height, x, y,
+            passed: false,
+            color: this.color,
             draw() {
                 ctx.fillStyle = this.color;
                 ctx.fillRect(this.x, this.y, this.width, this.height);

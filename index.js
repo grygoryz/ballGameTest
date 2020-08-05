@@ -1,4 +1,4 @@
-const winScore = 5;
+const winScore = 25;
 
 const playGame = () => startGame(winScore, handleResult);
 

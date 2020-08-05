@@ -3,7 +3,6 @@ class Modal {
         this.title = options.title;
         this.content = options.content;
         this.button = options.button;
-
         this.createModal()
     }
 
@@ -15,7 +14,6 @@ class Modal {
         <div class="modal__content">${this.content}</div>
             <button class="modal__button">${this.button.text}</button>
         </div>`
-
 
         const button = this.modal.querySelector(".modal__button");
         const onClick = this.button.onClick;
